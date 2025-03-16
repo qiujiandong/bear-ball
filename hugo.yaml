@@ -1,3 +1,44 @@
 baseURL: https://bearball.top/
 title: BearBall
 theme: ["PaperMod"]
+buildDrafts: false
+buildExpired: false
+buildFuture: false
+enableEmoji: true
+enableGitInfo: true
+hasCJKLanguage: true
+languageCode: "zh-cn"
+# languages:
+taxonomies:
+  category: categories
+  tag: tags
+  author: author
+
+menus:
+  main:
+  - name: Archives
+    url: archives
+    weight: 5
+  - name: Search
+    url: search
+    weight: 10
+  - name: Categories
+    pageRef: categories
+    weight: 20
+  - name: Tags
+    pageRef: tags
+    weight: 30
+
+minify:
+  disableXML: true
+
+params:
+  env: production
+  # description: ""
+  # author: []
+  defaultTheme: auto
+  showtoc: true
+  tocopen: true
+  ShowReadingTime: true
+  ShowCodeCopyButtons: true
+  ShowAllPagesInArchive: true
