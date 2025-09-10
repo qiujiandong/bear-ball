@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Configure clangd to help coding with RISC-V Vector extensions.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RISC-V RVV intrinsic指令优化指南">
+<meta property="og:url" content="https://bearball.top/2025/09/10/rvv-coding/index.html">
+<meta property="og:site_name" content="Bearball">
+<meta property="og:description" content="Configure clangd to help coding with RISC-V Vector extensions.">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNDg0dW1zandwNzFkZGoyNWp3YTZlMnZwdzZ0aDYxdHhyaTZraWhkZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/lQUGbpbTKQBWVulhxS/giphy.gif">
+<meta property="article:published_time" content="2025-09-10T14:31:55.000Z">
+<meta property="article:modified_time" content="2025-09-10T14:39:13.788Z">
+<meta property="article:author" content="Jiandong Qiu">
+<meta property="article:tag" content="RISC-V">
+<meta property="article:tag" content="RVV">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNDg0dW1zandwNzFkZGoyNWp3YTZlMnZwdzZ0aDYxdHhyaTZraWhkZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/lQUGbpbTKQBWVulhxS/giphy.gif">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>RISC-V RVV intrinsic指令优化指南</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+		<script type="text/x-mathjax-config">
+		  MathJax.Hub.Config({
+			tex2jax: {
+			  skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+			  inlineMath: [['$','$']]
+			}
+		  });
+		</script>
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML' async></script>
+	
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     --><!--
+       --><li><a href="/tags/">标签</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="https://github.com/qiujiandong">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://bearball.top/2025/09/10/rvv-coding/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://bearball.top/2025/09/10/rvv-coding/&text=RISC-V RVV intrinsic指令优化指南"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://bearball.top/2025/09/10/rvv-coding/&title=RISC-V RVV intrinsic指令优化指南"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://bearball.top/2025/09/10/rvv-coding/&is_video=false&description=RISC-V RVV intrinsic指令优化指南"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=RISC-V RVV intrinsic指令优化指南&body=Check out this article: https://bearball.top/2025/09/10/rvv-coding/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://bearball.top/2025/09/10/rvv-coding/&title=RISC-V RVV intrinsic指令优化指南"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://bearball.top/2025/09/10/rvv-coding/&title=RISC-V RVV intrinsic指令优化指南"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://bearball.top/2025/09/10/rvv-coding/&title=RISC-V RVV intrinsic指令优化指南"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://bearball.top/2025/09/10/rvv-coding/&title=RISC-V RVV intrinsic指令优化指南"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://bearball.top/2025/09/10/rvv-coding/&name=RISC-V RVV intrinsic指令优化指南&description=&lt;p&gt;Configure &lt;code&gt;clangd&lt;/code&gt; to help coding with RISC-V Vector extensions.&lt;/p&gt;"><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://bearball.top/2025/09/10/rvv-coding/&t=RISC-V RVV intrinsic指令优化指南"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Related-Issues"><span class="toc-number">1.</span> <span class="toc-text">Related Issues</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Demo"><span class="toc-number">2.</span> <span class="toc-text">Demo</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#How-to-Use"><span class="toc-number">3.</span> <span class="toc-text">How to Use</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Generate-Header-Files"><span class="toc-number">3.1.</span> <span class="toc-text">1. Generate Header Files</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Configure-Clangd"><span class="toc-number">3.2.</span> <span class="toc-text">2. Configure Clangd</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Testing"><span class="toc-number">4.</span> <span class="toc-text">Testing</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#License"><span class="toc-number">5.</span> <span class="toc-text">License</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        RISC-V RVV intrinsic指令优化指南
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Jiandong Qiu</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-09-10T14:31:55.000Z" class="dt-published" itemprop="datePublished">2025-09-10</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/RISC-V/">RISC-V</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/RISC-V/" rel="tag">RISC-V</a>, <a class="p-category" href="/tags/RVV/" rel="tag">RVV</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>Configure <code>clangd</code> to help coding with RISC-V Vector extensions.</p>
+<span id="more"></span>
+
+<h2 id="Related-Issues"><a href="#Related-Issues" class="headerlink" title="Related Issues"></a>Related Issues</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/clangd/clangd/issues/2143">clangd#2143</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/llvm/llvm-project/issues/109634">llvm-project#109634</a></li>
+</ul>
+<p>The RISC-V vector intrinsic functions are defined in <code>&lt;riscv_vector.h&gt;</code> as follows:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">pragma</span> clang riscv intrinsic vector</span></span><br></pre></td></tr></table></figure>
+
+<p>While the compiler can recognize these, <code>clangd</code> currently does not. It may support them in the future, but for now, you’ll need to manually generate these header files as a workaround.</p>
+<h2 id="Demo"><a href="#Demo" class="headerlink" title="Demo"></a>Demo</h2><p>Let’s write some RVV code!</p>
+<p><img src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNDg0dW1zandwNzFkZGoyNWp3YTZlMnZwdzZ0aDYxdHhyaTZraWhkZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/lQUGbpbTKQBWVulhxS/giphy.gif" alt="demo"></p>
+<h2 id="How-to-Use"><a href="#How-to-Use" class="headerlink" title="How to Use"></a>How to Use</h2><h3 id="1-Generate-Header-Files"><a href="#1-Generate-Header-Files" class="headerlink" title="1. Generate Header Files"></a>1. Generate Header Files</h3><p>Start by generating the intrinsic files from <code>rvv-intrinsic-doc</code>. Clone the submodule:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git submodule update --init --recursive</span><br></pre></td></tr></table></figure>
+
+<p>The intrinsic version is v0.12.x. Prepare your Python environment, navigate to the <code>rvv-intrinsic-doc</code> directory, and then run the following commands:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cd rvv-intrinsic-generator</span><br><span class="line">pip install -r requirements.txt</span><br><span class="line">make</span><br></pre></td></tr></table></figure>
+
+<p>The intrinsic files will be generated in <code>rvv-intrinsic-doc/auto-generated/</code> in <code>.md</code> format. We need to convert these to <code>.h</code> format.</p>
+<p>Run the script in the <code>scripts</code> directory:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./scripts/run.py</span><br></pre></td></tr></table></figure>
+
+<p>This will generate the header files in the <code>rvv_intrinsic</code> directory.</p>
+<h3 id="2-Configure-Clangd"><a href="#2-Configure-Clangd" class="headerlink" title="2. Configure Clangd"></a>2. Configure Clangd</h3><p>The <code>rvv_intrinsic.h</code> file organizes the header files with corresponding extensions. You do not need to include this file directly in your application, as the compiler already knows about these intrinsics.</p>
+<p>However, <code>clangd</code> does not automatically recognize them. To configure <code>clangd</code>, please refer to the <a target="_blank" rel="noopener" href="https://clangd.llvm.org/config">Configurations</a> documentation. Add the following configuration to your <code>.clangd</code> file:</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">CompileFlags:</span></span><br><span class="line">  <span class="attr">Add:</span></span><br><span class="line">    [</span><br><span class="line">      <span class="string">-include</span> <span class="string">/path/to/repo/rvv_intrinsic/rvv_intrinsic.h</span>,</span><br><span class="line">      <span class="string">-I</span> <span class="string">/path/to/repo/rvv-intrinsic/rvv_intrinsic</span>,</span><br><span class="line">    ]</span><br></pre></td></tr></table></figure>
+
+<p>This will force the inclusion of <code>rvv_intrinsic.h</code> and allow <code>clangd</code> to locate the generated header files.</p>
+<h2 id="Testing"><a href="#Testing" class="headerlink" title="Testing"></a>Testing</h2><p>Before running tests, make sure you have prepared the RISC-V toolchain and <code>bear</code>. <code>bear</code> is used to generate the <code>compile_commands.json</code> compilation database, which is required by <code>clangd</code>.</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/riscv-collab/riscv-gnu-toolchain">RISC-V GNU Toolchain</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/rizsotto/Bear">Bear</a></li>
+</ul>
+<p>The <code>tests</code> directory contains various RISC-V vector extension subset test cases, including:</p>
+<ul>
+<li>_zve32x</li>
+<li>_zve32f</li>
+<li>_zfh_zvfh_zve32f</li>
+<li>_zve64x</li>
+<li>_zve64f</li>
+<li>_zve64d</li>
+</ul>
+<p>For more details on the different vector extensions, refer to the <a target="_blank" rel="noopener" href="https://github.com/riscvarchive/riscv-v-spec/releases/tag/v1.0">RISC-V V-Spec v1.0</a>.</p>
+<p>To generate the compilation database (<code>compile_commands.json</code>), run the following command in the directory where the <code>Makefile</code> exists:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bear -- make</span><br></pre></td></tr></table></figure>
+
+<p>If you have the <code>clangd</code> <a target="_blank" rel="noopener" href="https://clangd.llvm.org/installation#editor-plugins">plugin</a> installed in VSCode or Neovim, it should work seamlessly.</p>
+<hr>
+<p>Let me know if you’d like to adjust anything further!</p>
+<h2 id="License"><a href="#License" class="headerlink" title="License"></a>License</h2><p>This project is licensed under the Apache License 2.0 - see the <a href="./LICENSE.txt">LICENSE.txt</a> file for details.</p>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+          <li><a href="/tags/">标签</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="https://github.com/qiujiandong">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Related-Issues"><span class="toc-number">1.</span> <span class="toc-text">Related Issues</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Demo"><span class="toc-number">2.</span> <span class="toc-text">Demo</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#How-to-Use"><span class="toc-number">3.</span> <span class="toc-text">How to Use</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Generate-Header-Files"><span class="toc-number">3.1.</span> <span class="toc-text">1. Generate Header Files</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Configure-Clangd"><span class="toc-number">3.2.</span> <span class="toc-text">2. Configure Clangd</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Testing"><span class="toc-number">4.</span> <span class="toc-text">Testing</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#License"><span class="toc-number">5.</span> <span class="toc-text">License</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://bearball.top/2025/09/10/rvv-coding/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://bearball.top/2025/09/10/rvv-coding/&text=RISC-V RVV intrinsic指令优化指南"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://bearball.top/2025/09/10/rvv-coding/&title=RISC-V RVV intrinsic指令优化指南"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://bearball.top/2025/09/10/rvv-coding/&is_video=false&description=RISC-V RVV intrinsic指令优化指南"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=RISC-V RVV intrinsic指令优化指南&body=Check out this article: https://bearball.top/2025/09/10/rvv-coding/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://bearball.top/2025/09/10/rvv-coding/&title=RISC-V RVV intrinsic指令优化指南"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://bearball.top/2025/09/10/rvv-coding/&title=RISC-V RVV intrinsic指令优化指南"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://bearball.top/2025/09/10/rvv-coding/&title=RISC-V RVV intrinsic指令优化指南"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://bearball.top/2025/09/10/rvv-coding/&title=RISC-V RVV intrinsic指令优化指南"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://bearball.top/2025/09/10/rvv-coding/&name=RISC-V RVV intrinsic指令优化指南&description=&lt;p&gt;Configure &lt;code&gt;clangd&lt;/code&gt; to help coding with RISC-V Vector extensions.&lt;/p&gt;"><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://bearball.top/2025/09/10/rvv-coding/&t=RISC-V RVV intrinsic指令优化指南"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2025
+    Jiandong Qiu
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     --><!--
+       --><li><a href="/tags/">标签</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="https://github.com/qiujiandong">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'qiujiandong';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+<!-- utterances Comments -->
+
+</body>
+</html>
