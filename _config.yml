@@ -91,3 +91,7 @@ deploy:
   type: git
   repo: git@github.com:qiujiandong/bear-ball.git
   branch: gh-pages
+
+cname:
+  enable: true
+  value: bearball.top
