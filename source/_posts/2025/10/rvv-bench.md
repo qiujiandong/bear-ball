@@ -87,7 +87,7 @@ let data = [
 对于结果数据的显示, 我做了一些优化。比如这里有一个`vl128dl128`的文件夹,
 如果需要更新测试结果，只需要复制整个文件夹，然后更新`data.js`文件即可。
 
-![results](./rvv-bench/results.png)
+![results](results.png)
 
 ## C代码解析
 

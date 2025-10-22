@@ -83,7 +83,7 @@ cycle: 2706
 
 `timebase-frequency`是以大端形式存放的，实际的值应该是 `27000000`
 
-![timebase](./rdtime/timebase-frequency.png)
+![timebase](timebase-frequency.png)
 
 如果CPU是固定以1.6GHz工作的，那么就可以计算出实际的cycle数：
 
