@@ -3,7 +3,7 @@ title: rvv-bench测试框架
 date: 2025-10-15 11:16:56
 tags:
   - RISC-V
-  - rvv
+  - RVV
   - benchmark
 categories:
   - RISC-V

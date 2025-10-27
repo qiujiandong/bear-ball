@@ -6,8 +6,8 @@ tags:
   - RISC-V
   - vllm
 categories:
-  - RISC-V
-  - openEuler
+  - [RISC-V]
+  - [openEuler]
 ---
 
 今天又折腾了一下openEuler和vllm.

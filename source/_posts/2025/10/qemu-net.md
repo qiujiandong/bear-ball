@@ -6,8 +6,8 @@ tags:
   - QEMU
   - RISC-V
 categories:
-  - RISC-V
-  - openEuler
+  - [RISC-V]
+  - [openEuler]
 ---
 
 openEuler的虚拟机镜像使用官网提供的即可, [openEuler RISC-V虚拟机安装文档](https://docs.openeuler.org/zh/docs/25.09/server/installation_upgrade/installation/risc_v_qemu.html)
