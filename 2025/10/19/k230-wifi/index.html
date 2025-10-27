@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="今天按照官方的教程 设置了一下K230开发板的wifi密码. 感觉流程可以改进一些, 比如开机自动连wifi.  第一步, 启用无线网卡. ifconfig 或者 ip 命令都可以用, ifconfig 是相对较老的命令 12# ifconfig wlan0 upip link set wlan0 up  第二步, 启动wpa_supplicant: 1wpa_supplicant -B -i w">
+<meta property="og:type" content="article">
+<meta property="og:title" content="K230设置自动连接wifi">
+<meta property="og:url" content="https://bearball.top/2025/10/19/k230-wifi/index.html">
+<meta property="og:site_name" content="Bearball">
+<meta property="og:description" content="今天按照官方的教程 设置了一下K230开发板的wifi密码. 感觉流程可以改进一些, 比如开机自动连wifi.  第一步, 启用无线网卡. ifconfig 或者 ip 命令都可以用, ifconfig 是相对较老的命令 12# ifconfig wlan0 upip link set wlan0 up  第二步, 启动wpa_supplicant: 1wpa_supplicant -B -i w">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-10-19T12:43:42.000Z">
+<meta property="article:modified_time" content="2025-10-27T15:25:55.522Z">
+<meta property="article:author" content="Jiandong">
+<meta property="article:tag" content="Embedded">
+<meta property="article:tag" content="K230">
+<meta property="article:tag" content="wifi">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>K230设置自动连接wifi</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+		<script type="text/x-mathjax-config">
+		  MathJax.Hub.Config({
+			tex2jax: {
+			  skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+			  inlineMath: [['$','$']]
+			}
+		  });
+		</script>
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML' async></script>
+	
+<meta name="generator" content="Hexo 8.0.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     --><!--
+       --><li><a href="/tags/">标签</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="https://github.com/qiujiandong">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/10/25/qemu-net/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/10/16/missing-linebrk/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://bearball.top/2025/10/19/k230-wifi/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://bearball.top/2025/10/19/k230-wifi/&text=K230设置自动连接wifi"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://bearball.top/2025/10/19/k230-wifi/&title=K230设置自动连接wifi"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://bearball.top/2025/10/19/k230-wifi/&is_video=false&description=K230设置自动连接wifi"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=K230设置自动连接wifi&body=Check out this article: https://bearball.top/2025/10/19/k230-wifi/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://bearball.top/2025/10/19/k230-wifi/&title=K230设置自动连接wifi"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://bearball.top/2025/10/19/k230-wifi/&title=K230设置自动连接wifi"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://bearball.top/2025/10/19/k230-wifi/&title=K230设置自动连接wifi"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://bearball.top/2025/10/19/k230-wifi/&title=K230设置自动连接wifi"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://bearball.top/2025/10/19/k230-wifi/&name=K230设置自动连接wifi&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://bearball.top/2025/10/19/k230-wifi/&t=K230设置自动连接wifi"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        K230设置自动连接wifi
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Jiandong</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-10-19T12:43:42.000Z" class="dt-published" itemprop="datePublished">2025-10-19</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/Embedded/">Embedded</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Embedded/" rel="tag">Embedded</a>, <a class="p-category" href="/tags/K230/" rel="tag">K230</a>, <a class="p-category" href="/tags/wifi/" rel="tag">wifi</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>今天按照官方的<a target="_blank" rel="noopener" href="https://www.kendryte.com/k230_linux/dev/zh/01_software/K230_linux_WiFi%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97.html">教程</a>
+设置了一下K230开发板的wifi密码. 感觉流程可以改进一些, 比如开机自动连wifi.</p>
+<hr>
+<p>第一步, 启用无线网卡. <code>ifconfig</code> 或者 <code>ip</code> 命令都可以用, <code>ifconfig</code> 是相对较老的命令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ifconfig wlan0 up</span></span><br><span class="line">ip <span class="built_in">link</span> <span class="built_in">set</span> wlan0 up</span><br></pre></td></tr></table></figure>
+
+<p>第二步, 启动<code>wpa_supplicant</code>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wpa_supplicant -B -i wlan0 -c /etc/wpa_supplicant.conf</span><br></pre></td></tr></table></figure>
+
+<p><code>-B</code>的作用是后台运行, <code>-i</code>指定无线网卡, <code>-c</code>指定配置文件.
+和wifi相关的配置都可以在配置文件中写好.</p>
+<p>所以在第二步前, 需要先准备一下配置文件. 嘉楠提供了默认的配置文件:</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">ctrl_interface=/var/run/wpa_supplicant</span><br><span class="line">ap_scan=1</span><br><span class="line"></span><br><span class="line">network=&#123;</span><br><span class="line">  key_mgmt=NONE</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里没有设置wifi的名称和密码, 只能用来连开放的无线网络.
+如果要设置wifi的名称和密码的话, 可以先:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">wpa_passphrase wifi_test 12345678</span><br><span class="line">network=&#123;</span><br><span class="line">        ssid=<span class="string">&quot;wifi_test&quot;</span></span><br><span class="line">        <span class="comment">#psk=&quot;12345678&quot;</span></span><br><span class="line">        psk=5c86769b524f416c47ece4465c526cf24e20ce3e565618f4a081130ae22402cc</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>用<code>wpa_passphrase</code>生成加密的密码, 这样可以避免wifi密码泄漏.</p>
+<p>接着写配置文件的时候可以写多个wifi名称和密码, 并且可以指定优先级,
+以应多多种场景:</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">ctrl_interface=/var/run/wpa_supplicant</span><br><span class="line">ap_scan=1</span><br><span class="line"></span><br><span class="line">network=&#123;</span><br><span class="line">    ssid=&quot;HomeWiFi&quot;</span><br><span class="line">    psk=&quot;home1234&quot;</span><br><span class="line">    priority=10</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">network=&#123;</span><br><span class="line">    ssid=&quot;OfficeWiFi&quot;</span><br><span class="line">    psk=&quot;work5678&quot;</span><br><span class="line">    priority=5</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">network=&#123;</span><br><span class="line">    ssid=&quot;MyPhone&quot;</span><br><span class="line">    psk=&quot;87654321&quot;</span><br><span class="line">    priority=1</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>有了<code>wpa_supplicant</code>的配置之后, 还需要启动<code>udhcpc</code>来获取ip地址:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">udhcpc -i wlan0 -q</span><br></pre></td></tr></table></figure>
+
+<hr>
+<p>最后, 这整个流程也都可以写在一个脚本里, 比如<code>/etc/init.d/wifi_connect.sh</code>,
+然后在系统启动的过程中调用这个脚本, 以实现开机自动启动:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line">WLAN_IFACE=<span class="string">&quot;wlan0&quot;</span></span><br><span class="line">CONF_FILE=<span class="string">&quot;/etc/wpa_supplicant.conf&quot;</span></span><br><span class="line">ip <span class="built_in">link</span> <span class="built_in">set</span> <span class="variable">$WLAN_IFACE</span> up</span><br><span class="line">wpa_supplicant -B -i <span class="variable">$WLAN_IFACE</span> -c <span class="variable">$CONF_FILE</span></span><br><span class="line"><span class="built_in">sleep</span> 3</span><br><span class="line">udhcpc -i <span class="variable">$WLAN_IFACE</span> -q</span><br></pre></td></tr></table></figure>
+
+<p>然后在<code>/etc/init.d/rcS</code> 中的最后调用这个脚本:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/etc/init.d/wifi_connect.sh &amp;</span><br></pre></td></tr></table></figure>
+
+<p>这样系统启动的时候就会自动连wifi啦.</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+          <li><a href="/tags/">标签</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="https://github.com/qiujiandong">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://bearball.top/2025/10/19/k230-wifi/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://bearball.top/2025/10/19/k230-wifi/&text=K230设置自动连接wifi"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://bearball.top/2025/10/19/k230-wifi/&title=K230设置自动连接wifi"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://bearball.top/2025/10/19/k230-wifi/&is_video=false&description=K230设置自动连接wifi"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=K230设置自动连接wifi&body=Check out this article: https://bearball.top/2025/10/19/k230-wifi/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://bearball.top/2025/10/19/k230-wifi/&title=K230设置自动连接wifi"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://bearball.top/2025/10/19/k230-wifi/&title=K230设置自动连接wifi"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://bearball.top/2025/10/19/k230-wifi/&title=K230设置自动连接wifi"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://bearball.top/2025/10/19/k230-wifi/&title=K230设置自动连接wifi"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://bearball.top/2025/10/19/k230-wifi/&name=K230设置自动连接wifi&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://bearball.top/2025/10/19/k230-wifi/&t=K230设置自动连接wifi"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2025
+    Jiandong
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     --><!--
+       --><li><a href="/tags/">标签</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="https://github.com/qiujiandong">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

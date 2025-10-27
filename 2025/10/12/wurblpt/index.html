@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="WurblPT 最开始是从这篇论文Simulation of Time-of-Flight Sensors for Evaluation of Chip Layout Variants 入手的, WurblPT有一个example用来仿真这个论文里的例子. 仓库依赖tgd, 可以先把这个仓库tgd clone一下, 先编译这个 12345cd tgdcmake -B build cmake -B">
+<meta property="og:type" content="article">
+<meta property="og:title" content="用wurblpt仿真ToF传感器">
+<meta property="og:url" content="https://bearball.top/2025/10/12/wurblpt/index.html">
+<meta property="og:site_name" content="Bearball">
+<meta property="og:description" content="WurblPT 最开始是从这篇论文Simulation of Time-of-Flight Sensors for Evaluation of Chip Layout Variants 入手的, WurblPT有一个example用来仿真这个论文里的例子. 仓库依赖tgd, 可以先把这个仓库tgd clone一下, 先编译这个 12345cd tgdcmake -B build cmake -B">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-10-12T15:21:36.000Z">
+<meta property="article:modified_time" content="2025-10-27T15:25:55.525Z">
+<meta property="article:author" content="Jiandong">
+<meta property="article:tag" content="sensor">
+<meta property="article:tag" content="sim">
+<meta property="article:tag" content="wurblpt">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>用wurblpt仿真ToF传感器</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+		<script type="text/x-mathjax-config">
+		  MathJax.Hub.Config({
+			tex2jax: {
+			  skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+			  inlineMath: [['$','$']]
+			}
+		  });
+		</script>
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML' async></script>
+	
+<meta name="generator" content="Hexo 8.0.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     --><!--
+       --><li><a href="/tags/">标签</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="https://github.com/qiujiandong">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/10/13/diary-251013/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/10/09/rdtime/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://bearball.top/2025/10/12/wurblpt/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://bearball.top/2025/10/12/wurblpt/&text=用wurblpt仿真ToF传感器"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://bearball.top/2025/10/12/wurblpt/&title=用wurblpt仿真ToF传感器"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://bearball.top/2025/10/12/wurblpt/&is_video=false&description=用wurblpt仿真ToF传感器"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=用wurblpt仿真ToF传感器&body=Check out this article: https://bearball.top/2025/10/12/wurblpt/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://bearball.top/2025/10/12/wurblpt/&title=用wurblpt仿真ToF传感器"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://bearball.top/2025/10/12/wurblpt/&title=用wurblpt仿真ToF传感器"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://bearball.top/2025/10/12/wurblpt/&title=用wurblpt仿真ToF传感器"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://bearball.top/2025/10/12/wurblpt/&title=用wurblpt仿真ToF传感器"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://bearball.top/2025/10/12/wurblpt/&name=用wurblpt仿真ToF传感器&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://bearball.top/2025/10/12/wurblpt/&t=用wurblpt仿真ToF传感器"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        用wurblpt仿真ToF传感器
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Jiandong</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-10-12T15:21:36.000Z" class="dt-published" itemprop="datePublished">2025-10-12</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/sensor/">sensor</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/sensor/" rel="tag">sensor</a>, <a class="p-category" href="/tags/sim/" rel="tag">sim</a>, <a class="p-category" href="/tags/wurblpt/" rel="tag">wurblpt</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p><a target="_blank" rel="noopener" href="https://github.com/marlam/wurblpt">WurblPT</a></p>
+<p>最开始是从这篇论文<a target="_blank" rel="noopener" href="https://ieeexplore.ieee.org/document/7054461">Simulation of Time-of-Flight Sensors for Evaluation of Chip Layout Variants</a>
+入手的, WurblPT有一个example用来仿真这个论文里的例子.</p>
+<p>仓库依赖<code>tgd</code>, 可以先把这个仓库<a target="_blank" rel="noopener" href="https://github.com/marlam/tgd">tgd</a> clone一下,
+先编译这个</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> tgd</span><br><span class="line">cmake -B build </span><br><span class="line">cmake -B build -DCMAKE_INSTALL_PREFIX=<span class="variable">$HOME</span>/.local -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Release .</span><br><span class="line"><span class="built_in">cd</span> build</span><br><span class="line"><span class="built_in">sudo</span> checkinstall</span><br></pre></td></tr></table></figure>
+
+<p>值得注意的有两个地方:</p>
+<ol>
+<li>一定要编译Release模式, Release模式跑起来真的快很多.</li>
+<li>这种用源码编译的库我一般都放在自己的<code>.local</code>目录, 那样不容易污染系统环境.</li>
+<li>用<code>checkinstall</code>安装可以方便后续卸载, 但就是需要用到管理员权限,
+卸载的时候也是通过dpkg卸载. 在安装的时候要记得看清楚安装的库的名字.</li>
+</ol>
+<p>安装完<code>tgd</code>之后就可以安装<code>libwurblpt</code>了, 安装的命令也是一样的.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> wurblpt/libwurblpt</span><br><span class="line">cmake -B build -DCMAKE_INSTALL_PREFIX=<span class="variable">$HOME</span>/.local -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Release .</span><br><span class="line"><span class="built_in">cd</span> build</span><br><span class="line"><span class="built_in">sudo</span> checkinstall</span><br></pre></td></tr></table></figure>
+
+<p>最后再编译<code>wurblpt-tof-example</code>, 然后就可以跑ToF的仿真了.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> wurblpt/wurblpt-tof-example</span><br><span class="line">cmake -B build -DCMAKE_INSTALL_PREFIX=<span class="variable">$HOME</span>/.local -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Release .</span><br><span class="line"><span class="built_in">cd</span> build</span><br><span class="line">make</span><br><span class="line">./wurblpt-tof-example</span><br></pre></td></tr></table></figure>
+
+<p>仿真生成的都是<code>.tgd</code>后缀的数据, 可以用<code>qv</code>查看, 这个我也是从仓库的issue看到的,
+<a target="_blank" rel="noopener" href="https://github.com/marlam/wurblpt/issues/1">wurblpt#1</a>
+我是通过<code>flatpak</code>安装的<code>qv</code>, 可以把要看的一个系列图片放在一个文件夹里,
+然后用<code>qv</code>查看整个文件夹, 然后可以用方向键的左右来看每帧的结果.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">flatpak run de.marlam.qv result</span><br></pre></td></tr></table></figure>
+
+<p>如何将距离像转换为三维点云视图? <a target="_blank" rel="noopener" href="https://marlam.de/wurblpt/features/simulation-of-time-of-flight-sensors/">这里</a>
+只说了可以用距离像生成, 但是没有说具体怎么做. 而且<code>tgd</code>格式在python里的支持不是很好,
+没法直接读取. <code>tgd</code>格式可以转<code>tiff</code>格式:<br>比如像这样可以把<code>resutl.tgd</code>中通道0的数据转换称<code>tiff</code>格式.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tgd convert -c 0 result.tgd result.tiff</span><br></pre></td></tr></table></figure>
+
+<p>然后<code>tiff</code>格式的数据在python中就可以比较方便处理了. 利用<code>open3d</code>可以生成3D点云.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> tifffile <span class="keyword">as</span> tiff</span><br><span class="line"><span class="keyword">import</span> open3d <span class="keyword">as</span> o3d</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line"></span><br><span class="line">Z = tiff.imread(<span class="string">&quot;out.tiff&quot;</span>)</span><br><span class="line">Z = <span class="number">300</span> - Z * <span class="number">100</span></span><br><span class="line">x, y = np.meshgrid(np.arange(Z.shape[<span class="number">1</span>]), np.arange(Z.shape[<span class="number">0</span>])[::-<span class="number">1</span>])</span><br><span class="line"></span><br><span class="line">points = np.stack((x, y, Z), axis=-<span class="number">1</span>).reshape(-<span class="number">1</span>, <span class="number">3</span>)</span><br><span class="line"></span><br><span class="line">norm = (Z - Z.<span class="built_in">min</span>()) / (Z.<span class="built_in">max</span>() + <span class="number">50</span> - Z.<span class="built_in">min</span>())</span><br><span class="line">colors = plt.cm.jet(norm).reshape(-<span class="number">1</span>, <span class="number">4</span>)[:, :<span class="number">3</span>]</span><br><span class="line"></span><br><span class="line">pcd = o3d.geometry.PointCloud()</span><br><span class="line">pcd.points = o3d.utility.Vector3dVector(points)</span><br><span class="line">pcd.colors = o3d.utility.Vector3dVector(colors)</span><br><span class="line"></span><br><span class="line">min_bound = points.<span class="built_in">min</span>(axis=<span class="number">0</span>)</span><br><span class="line">max_bound = points.<span class="built_in">max</span>(axis=<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">bbox_points = np.array([</span><br><span class="line">    [min_bound[<span class="number">0</span>], min_bound[<span class="number">1</span>], min_bound[<span class="number">2</span>]],</span><br><span class="line">    [max_bound[<span class="number">0</span>], min_bound[<span class="number">1</span>], min_bound[<span class="number">2</span>]],</span><br><span class="line">    [max_bound[<span class="number">0</span>], max_bound[<span class="number">1</span>], min_bound[<span class="number">2</span>]],</span><br><span class="line">    [min_bound[<span class="number">0</span>], max_bound[<span class="number">1</span>], min_bound[<span class="number">2</span>]],</span><br><span class="line">    [min_bound[<span class="number">0</span>], min_bound[<span class="number">1</span>], max_bound[<span class="number">2</span>]],</span><br><span class="line">    [max_bound[<span class="number">0</span>], min_bound[<span class="number">1</span>], max_bound[<span class="number">2</span>]],</span><br><span class="line">    [max_bound[<span class="number">0</span>], max_bound[<span class="number">1</span>], max_bound[<span class="number">2</span>]],</span><br><span class="line">    [min_bound[<span class="number">0</span>], max_bound[<span class="number">1</span>], max_bound[<span class="number">2</span>]],</span><br><span class="line">])</span><br><span class="line"></span><br><span class="line">lines = [</span><br><span class="line">    [<span class="number">0</span>,<span class="number">1</span>],[<span class="number">1</span>,<span class="number">2</span>],[<span class="number">2</span>,<span class="number">3</span>],[<span class="number">3</span>,<span class="number">0</span>],</span><br><span class="line">    [<span class="number">4</span>,<span class="number">5</span>],[<span class="number">5</span>,<span class="number">6</span>],[<span class="number">6</span>,<span class="number">7</span>],[<span class="number">7</span>,<span class="number">4</span>],</span><br><span class="line">    [<span class="number">0</span>,<span class="number">4</span>],[<span class="number">1</span>,<span class="number">5</span>],[<span class="number">2</span>,<span class="number">6</span>],[<span class="number">3</span>,<span class="number">7</span>] </span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">colors_lines = [[<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>] <span class="keyword">for</span> _ <span class="keyword">in</span> lines]</span><br><span class="line"></span><br><span class="line">line_set = o3d.geometry.LineSet()</span><br><span class="line">line_set.points = o3d.utility.Vector3dVector(bbox_points)</span><br><span class="line">line_set.lines = o3d.utility.Vector2iVector(lines)</span><br><span class="line">line_set.colors = o3d.utility.Vector3dVector(colors_lines)</span><br><span class="line"></span><br><span class="line">render_option = o3d.visualization.RenderOption()</span><br><span class="line">render_option.background_color = np.array([<span class="number">1.0</span>, <span class="number">1.0</span>, <span class="number">1.0</span>])</span><br><span class="line"></span><br><span class="line">o3d.visualization.draw_geometries([pcd, line_set])</span><br></pre></td></tr></table></figure>
+
+
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+          <li><a href="/tags/">标签</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="https://github.com/qiujiandong">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://bearball.top/2025/10/12/wurblpt/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://bearball.top/2025/10/12/wurblpt/&text=用wurblpt仿真ToF传感器"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://bearball.top/2025/10/12/wurblpt/&title=用wurblpt仿真ToF传感器"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://bearball.top/2025/10/12/wurblpt/&is_video=false&description=用wurblpt仿真ToF传感器"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=用wurblpt仿真ToF传感器&body=Check out this article: https://bearball.top/2025/10/12/wurblpt/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://bearball.top/2025/10/12/wurblpt/&title=用wurblpt仿真ToF传感器"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://bearball.top/2025/10/12/wurblpt/&title=用wurblpt仿真ToF传感器"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://bearball.top/2025/10/12/wurblpt/&title=用wurblpt仿真ToF传感器"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://bearball.top/2025/10/12/wurblpt/&title=用wurblpt仿真ToF传感器"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://bearball.top/2025/10/12/wurblpt/&name=用wurblpt仿真ToF传感器&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://bearball.top/2025/10/12/wurblpt/&t=用wurblpt仿真ToF传感器"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2025
+    Jiandong
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     --><!--
+       --><li><a href="/tags/">标签</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="https://github.com/qiujiandong">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

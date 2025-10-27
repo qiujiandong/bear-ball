@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="openEuler的虚拟机镜像使用官网提供的即可, openEuler RISC-V虚拟机安装文档 关于如何连接外网, 网上已经有很多文章介绍了, 比如这些参考链接:  QEMU Networking QEMU Networking NAT QEMU Networking Wiki openEuler Embedded QEMU Networking  但这些文章看上去配置起来也都挺麻烦的, 所以">
+<meta property="og:type" content="article">
+<meta property="og:title" content="openEuler RISC-V QEMU网络配置">
+<meta property="og:url" content="https://bearball.top/2025/10/25/qemu-net/index.html">
+<meta property="og:site_name" content="Bearball">
+<meta property="og:description" content="openEuler的虚拟机镜像使用官网提供的即可, openEuler RISC-V虚拟机安装文档 关于如何连接外网, 网上已经有很多文章介绍了, 比如这些参考链接:  QEMU Networking QEMU Networking NAT QEMU Networking Wiki openEuler Embedded QEMU Networking  但这些文章看上去配置起来也都挺麻烦的, 所以">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-10-25T14:14:44.000Z">
+<meta property="article:modified_time" content="2025-10-27T15:25:55.523Z">
+<meta property="article:author" content="Jiandong">
+<meta property="article:tag" content="QEMU">
+<meta property="article:tag" content="RISC-V">
+<meta property="article:tag" content="openEuler">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>openEuler RISC-V QEMU网络配置</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+		<script type="text/x-mathjax-config">
+		  MathJax.Hub.Config({
+			tex2jax: {
+			  skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+			  inlineMath: [['$','$']]
+			}
+		  });
+		</script>
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML' async></script>
+	
+<meta name="generator" content="Hexo 8.0.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     --><!--
+       --><li><a href="/tags/">标签</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="https://github.com/qiujiandong">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/10/26/openeuler-vllm/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/10/19/k230-wifi/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://bearball.top/2025/10/25/qemu-net/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://bearball.top/2025/10/25/qemu-net/&text=openEuler RISC-V QEMU网络配置"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://bearball.top/2025/10/25/qemu-net/&title=openEuler RISC-V QEMU网络配置"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://bearball.top/2025/10/25/qemu-net/&is_video=false&description=openEuler RISC-V QEMU网络配置"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=openEuler RISC-V QEMU网络配置&body=Check out this article: https://bearball.top/2025/10/25/qemu-net/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://bearball.top/2025/10/25/qemu-net/&title=openEuler RISC-V QEMU网络配置"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://bearball.top/2025/10/25/qemu-net/&title=openEuler RISC-V QEMU网络配置"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://bearball.top/2025/10/25/qemu-net/&title=openEuler RISC-V QEMU网络配置"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://bearball.top/2025/10/25/qemu-net/&title=openEuler RISC-V QEMU网络配置"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://bearball.top/2025/10/25/qemu-net/&name=openEuler RISC-V QEMU网络配置&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://bearball.top/2025/10/25/qemu-net/&t=openEuler RISC-V QEMU网络配置"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#NAT%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">NAT模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A1%A5%E6%8E%A5%E6%A8%A1%E5%BC%8F"><span class="toc-number">2.</span> <span class="toc-text">桥接模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9B%B4%E6%96%B0%E8%BD%AF%E4%BB%B6%E5%8C%85"><span class="toc-number">3.</span> <span class="toc-text">更新软件包</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        openEuler RISC-V QEMU网络配置
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Jiandong</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-10-25T14:14:44.000Z" class="dt-published" itemprop="datePublished">2025-10-25</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/RISC-V/">RISC-V</a> › <a class="category-link" href="/categories/openEuler/">openEuler</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/QEMU/" rel="tag">QEMU</a>, <a class="p-category" href="/tags/RISC-V/" rel="tag">RISC-V</a>, <a class="p-category" href="/tags/openEuler/" rel="tag">openEuler</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>openEuler的虚拟机镜像使用官网提供的即可, <a target="_blank" rel="noopener" href="https://docs.openeuler.org/zh/docs/25.09/server/installation_upgrade/installation/risc_v_qemu.html">openEuler RISC-V虚拟机安装文档</a></p>
+<p>关于如何连接外网, 网上已经有很多文章介绍了, 比如这些参考链接:</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://wiki.qemu.org/Documentation/Networking">QEMU Networking</a></li>
+<li><a target="_blank" rel="noopener" href="https://wiki.qemu.org/Documentation/Networking/NAT">QEMU Networking NAT</a></li>
+<li><a target="_blank" rel="noopener" href="https://en.wikibooks.org/wiki/QEMU/Networking">QEMU Networking Wiki</a></li>
+<li><a target="_blank" rel="noopener" href="https://embedded.pages.openeuler.org/master/developer_guide/debug/qemu/qemu_start.html#qemu-enable-net">openEuler Embedded QEMU Networking</a></li>
+</ul>
+<p>但这些文章看上去配置起来也都挺麻烦的, 所以我在这里记录一下我的配置方式.</p>
+<h2 id="NAT模式"><a href="#NAT模式" class="headerlink" title="NAT模式"></a>NAT模式</h2><p>Network Address Translation, 官方提供的<code>start_vm.sh</code>中默认启用的是user mode network backend,
+这个模式默认不能用<code>ping</code>来测试网络的连通性. 需要在宿主机上做一些额外的设置才行.
+但用<code>curl</code>来测试网络的连通性是可以的.</p>
+<p>这个NAT模式的额外开销比较多, 所以网络的性能也相对较差一些.</p>
+<p>通过<code>qemu-system-riscv</code>的help帮助信息可以看到有如下的配置选项</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">-netdev user,id=str[,ipv4=on|off][,net=addr[/mask]][,host=addr]</span><br><span class="line">         [,ipv6=on|off][,ipv6-net=addr[/int]][,ipv6-host=addr]</span><br><span class="line">         [,restrict=on|off][,hostname=host][,dhcpstart=addr]</span><br><span class="line">         [,dns=addr][,ipv6-dns=addr][,dnssearch=domain][,domainname=domain]</span><br><span class="line">         [,tftp=dir][,tftp-server-name=name][,bootfile=f][,hostfwd=rule][,guestfwd=rule][,smb=dir[,smbserver=addr]]</span><br><span class="line">                configure a user mode network backend with ID &#x27;str&#x27;,</span><br><span class="line">                its DHCP server and optional services</span><br></pre></td></tr></table></figure>
+
+<h2 id="桥接模式"><a href="#桥接模式" class="headerlink" title="桥接模式"></a>桥接模式</h2><p>桥接模式顾名思义就是用宿主机上的网桥来转发虚拟机上的网络数据包,
+但这个需要在宿主机上创建网桥, 然后设置<code>iptables</code>的转发. 感觉是有点麻烦的,
+不过好在qemu提供来一个<code>qemu-bridge-helper</code>来帮助我们做这个工作.</p>
+<p>关于网桥, 我发现我之前安装过<code>libvirt-daemon</code>, 所以有一个<code>virbr0</code>网桥已经有了,</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ip addr show virbr0 &amp;&amp; brctl show virbr0</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">4: virbr0: &lt;NO-CARRIER,BROADCAST,MULTICAST,UP&gt; mtu 1500 qdisc noqueue state DOWN group default qlen 1000</span><br><span class="line">    link/ether 52:54:00:18:ec:ef brd ff:ff:ff:ff:ff:ff</span><br><span class="line">    inet 192.168.122.1/24 brd 192.168.122.255 scope global virbr0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">bridge name     bridge id               STP enabled     interfaces</span><br><span class="line">virbr0          8000.52540018ecef       yes</span><br></pre></td></tr></table></figure>
+
+<p>可能是因为我之前装过<code>gnome-boxes</code>吧, 所以创建网桥的步骤我这里可以省略,
+只要安装过<code>libvirt-daemon</code>并启动来<code>libvirtd</code>服务应该就有这个网桥.
+在启动qemu的时候, 直接指定<code>-netdev bridge</code>, <code>br=virbr0</code>,
+QEMU就会启用<code>qemu-bridge-helper</code>来帮助我们做转发工作.</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">-netdev bridge,id=str[,br=bridge][,helper=helper]</span><br><span class="line">                configure a host TAP network backend with ID &#x27;str&#x27; that is</span><br><span class="line">                connected to a bridge (default=br0)</span><br><span class="line">                using the program &#x27;helper (default=/usr/local/bin/qemu-riscv64/libexec/qemu-bridge-helper)</span><br></pre></td></tr></table></figure>
+
+<p>根据QEMU安装位置的不同, 还需要提供一个<code>bridge.conf</code>文件</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> /usr/local/bin/qemu-riscv64/etc/qemu/bridge.conf</span><br><span class="line">allow virbr0</span><br></pre></td></tr></table></figure>
+
+<p>然后用的是时候还需要加上管理员权限</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> qemu-system-riscv ...</span><br></pre></td></tr></table></figure>
+
+<p>用这种bridge模式的话, 网络性能相对更好, 而且也可以用<code>ping</code>来测试网络的连通性了.</p>
+<h2 id="更新软件包"><a href="#更新软件包" class="headerlink" title="更新软件包"></a>更新软件包</h2><p>更新软件包的时候可能会遇到这样的问题:</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SSL peer certificate or SSH remote key was not OK ...</span><br></pre></td></tr></table></figure>
+
+<p>在更新软件包之前需要先同步一下时间. 一开始可以先手动设置一下时间:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> <span class="built_in">date</span> -s <span class="string">&quot;2025-10-25 20:30:00&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>然后在可以连网更新软件包之后再同步一下时间:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> ntpdate ntp.aliyun.com</span><br><span class="line"><span class="built_in">sudo</span> timedatectl set-timezone Asia/Shanghai</span><br></pre></td></tr></table></figure>
+
+<p>也可以按照这里的文档来设置时间, <a target="_blank" rel="noopener" href="https://docs.openeuler.org/zh/docs/21.03/docs/Administration/%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE.html">基础设置</a>
+具体如何更新软件包可以参考<a target="_blank" rel="noopener" href="https://docs.openeuler.org/zh/docs/21.03/docs/Administration/%E4%BD%BF%E7%94%A8DNF%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6%E5%8C%85.html">文档</a></p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+          <li><a href="/tags/">标签</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="https://github.com/qiujiandong">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#NAT%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">NAT模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A1%A5%E6%8E%A5%E6%A8%A1%E5%BC%8F"><span class="toc-number">2.</span> <span class="toc-text">桥接模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9B%B4%E6%96%B0%E8%BD%AF%E4%BB%B6%E5%8C%85"><span class="toc-number">3.</span> <span class="toc-text">更新软件包</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://bearball.top/2025/10/25/qemu-net/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://bearball.top/2025/10/25/qemu-net/&text=openEuler RISC-V QEMU网络配置"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://bearball.top/2025/10/25/qemu-net/&title=openEuler RISC-V QEMU网络配置"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://bearball.top/2025/10/25/qemu-net/&is_video=false&description=openEuler RISC-V QEMU网络配置"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=openEuler RISC-V QEMU网络配置&body=Check out this article: https://bearball.top/2025/10/25/qemu-net/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://bearball.top/2025/10/25/qemu-net/&title=openEuler RISC-V QEMU网络配置"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://bearball.top/2025/10/25/qemu-net/&title=openEuler RISC-V QEMU网络配置"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://bearball.top/2025/10/25/qemu-net/&title=openEuler RISC-V QEMU网络配置"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://bearball.top/2025/10/25/qemu-net/&title=openEuler RISC-V QEMU网络配置"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://bearball.top/2025/10/25/qemu-net/&name=openEuler RISC-V QEMU网络配置&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://bearball.top/2025/10/25/qemu-net/&t=openEuler RISC-V QEMU网络配置"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2025
+    Jiandong
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     --><!--
+       --><li><a href="/tags/">标签</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="https://github.com/qiujiandong">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

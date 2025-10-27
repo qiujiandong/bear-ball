@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="FFT基础离散傅里叶变换： $$X[k] &#x3D; \sum\limits_{n &#x3D; 0}^{N - 1} {x[n]{e^{ - j{2\pi nk} \over N}} &#x3D; \sum\limits_{n &#x3D; 0}^{N - 1} {x[n]W_N^{nk}} } $$ 快速傅里叶变换(FFT)常见的可以分为DIT&#x2F;DIF，即按时域分解或者按频域分解。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RISC-V Vector优化Radix-2 FFT">
+<meta property="og:url" content="https://bearball.top/2025/10/27/rvv-fft/index.html">
+<meta property="og:site_name" content="Bearball">
+<meta property="og:description" content="FFT基础离散傅里叶变换： $$X[k] &#x3D; \sum\limits_{n &#x3D; 0}^{N - 1} {x[n]{e^{ - j{2\pi nk} \over N}} &#x3D; \sum\limits_{n &#x3D; 0}^{N - 1} {x[n]W_N^{nk}} } $$ 快速傅里叶变换(FFT)常见的可以分为DIT&#x2F;DIF，即按时域分解或者按频域分解。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://bearball.top/2025/10/27/rvv-fft/fft_dif.svg">
+<meta property="og:image" content="https://bearball.top/2025/10/27/rvv-fft/fft_rvv.svg">
+<meta property="article:published_time" content="2025-10-27T09:29:30.000Z">
+<meta property="article:modified_time" content="2025-10-27T15:25:55.524Z">
+<meta property="article:author" content="Jiandong">
+<meta property="article:tag" content="FFT">
+<meta property="article:tag" content="RISC-V">
+<meta property="article:tag" content="RVV">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://bearball.top/2025/10/27/rvv-fft/fft_dif.svg">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>RISC-V Vector优化Radix-2 FFT</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+		<script type="text/x-mathjax-config">
+		  MathJax.Hub.Config({
+			tex2jax: {
+			  skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+			  inlineMath: [['$','$']]
+			}
+		  });
+		</script>
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML' async></script>
+	
+<meta name="generator" content="Hexo 8.0.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     --><!--
+       --><li><a href="/tags/">标签</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="https://github.com/qiujiandong">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/10/26/openeuler-vllm/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://bearball.top/2025/10/27/rvv-fft/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://bearball.top/2025/10/27/rvv-fft/&text=RISC-V Vector优化Radix-2 FFT"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://bearball.top/2025/10/27/rvv-fft/&title=RISC-V Vector优化Radix-2 FFT"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://bearball.top/2025/10/27/rvv-fft/&is_video=false&description=RISC-V Vector优化Radix-2 FFT"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=RISC-V Vector优化Radix-2 FFT&body=Check out this article: https://bearball.top/2025/10/27/rvv-fft/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://bearball.top/2025/10/27/rvv-fft/&title=RISC-V Vector优化Radix-2 FFT"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://bearball.top/2025/10/27/rvv-fft/&title=RISC-V Vector优化Radix-2 FFT"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://bearball.top/2025/10/27/rvv-fft/&title=RISC-V Vector优化Radix-2 FFT"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://bearball.top/2025/10/27/rvv-fft/&title=RISC-V Vector优化Radix-2 FFT"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://bearball.top/2025/10/27/rvv-fft/&name=RISC-V Vector优化Radix-2 FFT&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://bearball.top/2025/10/27/rvv-fft/&t=RISC-V Vector优化Radix-2 FFT"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#FFT%E5%9F%BA%E7%A1%80"><span class="toc-number">1.</span> <span class="toc-text">FFT基础</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%91%E9%87%8F%E5%8C%96%E5%A4%84%E7%90%86"><span class="toc-number">2.</span> <span class="toc-text">向量化处理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E6%95%B0FFT"><span class="toc-number">3.</span> <span class="toc-text">实数FFT</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AD%A3%E5%8F%98%E6%8D%A2"><span class="toc-number">3.1.</span> <span class="toc-text">正变换</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%86%E5%8F%98%E6%8D%A2"><span class="toc-number">3.2.</span> <span class="toc-text">逆变换</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-number">4.</span> <span class="toc-text">参考资料</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        RISC-V Vector优化Radix-2 FFT
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Jiandong</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-10-27T09:29:30.000Z" class="dt-published" itemprop="datePublished">2025-10-27</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/RISC-V/">RISC-V</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/FFT/" rel="tag">FFT</a>, <a class="p-category" href="/tags/RISC-V/" rel="tag">RISC-V</a>, <a class="p-category" href="/tags/RVV/" rel="tag">RVV</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h2 id="FFT基础"><a href="#FFT基础" class="headerlink" title="FFT基础"></a>FFT基础</h2><p>离散傅里叶变换：</p>
+<p>$$X[k] &#x3D; \sum\limits_{n &#x3D; 0}^{N - 1} {x[n]{e^{ - j{2\pi nk} \over N}}
+&#x3D; \sum\limits_{n &#x3D; 0}^{N - 1} {x[n]W_N^{nk}} } $$</p>
+<p>快速傅里叶变换(FFT)常见的可以分为DIT&#x2F;DIF，即按时域分解或者按频域分解。以按频域分解为例：</p>
+<p><img src="/2025/10/27/rvv-fft/fft_dif.svg" alt="fft_dif"></p>
+<p>写出偶数频率项和奇数频率项：</p>
+<p>$$X[2r] &#x3D; \sum\limits_{n &#x3D; 0}^{N - 1} {x[n]W_N^{2nr}} &#x3D;
+\sum\limits_{n &#x3D; 0}^{\frac{N}{2} - 1} {x[n]W_N^{2rn}} +
+\sum\limits_{n &#x3D; 0}^{\frac{N}{2} - 1}
+{x[n + \frac{N}{2}]W_N^{2r[n + \frac{N}{2}]}} &#x3D;
+\sum\limits_{n &#x3D; 0}^{\frac{N}{2} - 1} {(x[n] + x[n + \frac{N}{2}])W_{\frac{N}{2}}^{rn}}$$</p>
+<p>$$X[2r + 1] &#x3D; \sum\limits_{n &#x3D; 0}^{\frac{N}{2} - 1}
+{(x[n] - x[n + \frac{N}{2}])W_N^nW_{\frac{N}{2}}^{rn}} $$</p>
+<p>从这两个表达式来看，长度为N的DFT可以分解成两个长度为N&#x2F;2的DFT.</p>
+<p>而且从分解的形式看，每次都是将偶数部分和奇数部分拆分开,
+结果自然就不会是连续的, 而是形成位倒序的排列,
+由此也可以理解位倒序正是和radix-2息息相关，
+如果是radix-3或者radix-4, 输出的顺序就不完全是位倒序了。</p>
+<h2 id="向量化处理"><a href="#向量化处理" class="headerlink" title="向量化处理"></a>向量化处理</h2><p>可以看到DIF FFT的计算中每个stage的FFT长度是逐级减小的,
+这不太利于发挥SIMD指令的性能, 因此略微调整数据的摆放位置,
+可以使得中间的计算结果都能连续存放。</p>
+<p>原先的DIF FFT的计算过程有一个好处是可以原位计算,
+但是经过如下的调整后, 就不能原位计算了, 但是可以实现中间每层的计算都以N&#x2F;2的向量长度处理。</p>
+<p><img src="/2025/10/27/rvv-fft/fft_rvv.svg" alt="fft_rvv"></p>
+<h2 id="实数FFT"><a href="#实数FFT" class="headerlink" title="实数FFT"></a>实数FFT</h2><p>先说结论，N点的实数FFT只两个N&#x2F;4长度的序列就可以算出N&#x2F;2点结果，而且因为完整的结果是共轭对称的,
+所以一般剩下N&#x2F;2点就不用写了。</p>
+<h3 id="正变换"><a href="#正变换" class="headerlink" title="正变换"></a>正变换</h3><p>实数序列x[n], n&#x3D;0, 1, 2, …, N-1，可以根据索引值的奇偶性进行分组。</p>
+<p>偶数索引值的数组成一个新的实数序列f[u]，u&#x3D;0, 1, 2, …, N&#x2F;2-1</p>
+<p>$$f[u] &#x3D; x[2u]$$</p>
+<p>x[n]中奇数索引值的数组成新的实数序列g[u]，长度为N&#x2F;2。</p>
+<p>$$g[u] &#x3D; x[2u+1]$$</p>
+<p>把x[n]看作一个复数序列y[u]，偶数索引值的数作为实部，奇数索引值的数作为虚部。</p>
+<p>$$y[u] &#x3D; f[u] + jg[u]$$</p>
+<p>两边都做离散傅里叶变换，根据线性性质可以得到：</p>
+<p>$$Y[r] &#x3D; F[r] + jG[r]$$</p>
+<p>实数的离散傅里叶变换具有共轭对称性。</p>
+<p>$$X[r] &#x3D; \overline {X[N - r]} $$</p>
+<p>只需要把公式代入下面的分析式中就可以轻松验证</p>
+<p>$$X[r] &#x3D; \sum\limits_{n &#x3D; 0}^{N - 1} {x[n]{e^{ -j2\pi \frac{rn}{N}}}}$$</p>
+<p>$F[r]$是$f[u]$的离散傅里叶变换结果，$G[r]$是$g[u]$的离散傅里叶变换结果,
+$Y[r]$是$y[u]$的离散傅里叶变换结果。因为$f[u]$, $g[u]$是实数，所以：</p>
+<p>$$\overline {F[N&#x2F;2 - r]}  &#x3D; F[r]$$</p>
+<p>$$\overline {G[N&#x2F;2 - r]}  &#x3D; G[r]$$</p>
+<p>根据这一信息，可以把$r&#x3D;N&#x2F;2-r$代入$Y[r]$中：</p>
+<p>$$\overline {Y[N&#x2F;2 - r]}  &#x3D; \overline {F[N&#x2F;2 - r]}  +
+\overline {jG[N&#x2F;2 - r]}  &#x3D; F[r] - jG[r]$$</p>
+<p>再联立两个方程，可以用$Y[r]$和$\overline {Y[N&#x2F;2 - r]} $来表示$F[r]$和$G[r]$</p>
+<p>$$F[r] &#x3D; {1 \over 2}\left( {Y[r] + \overline {Y[N&#x2F;2 - r]} } \right)$$</p>
+<p>$$G[r] &#x3D; {j \over 2}\left( {\overline {Y[N&#x2F;2 - r]}  - Y[r]} \right)$$</p>
+<p>到这里，把x[n]（N点实数）看作一个复数序列y[u]（N&#x2F;2点复数）后, 可以计算y[u]的离散傅里叶变换，并且可以推算出x[n]中偶数索引的数组成的序列的离散傅里叶变换结果$F[r]$和奇数索引的数组成的序列的离散傅里叶变换结果$G[r]$。</p>
+<p>再考虑到用DIT分解计算x[n]的离散傅里叶变换时，第一步就是把x[n]分成两个奇偶子序列，</p>
+<p>$$X[r] &#x3D; \sum\limits_{n &#x3D; 0}^{N&#x2F;2 - 1} {x[2n]{e^{ - j2\pi {r2n} \over N}}}  +
+\sum\limits_{n &#x3D; 0}^{N&#x2F;2 - 1} {x[2n + 1]{e^{ - j2\pi {r(2n + 1)} \over N}}}$$</p>
+<p>$$X[r] &#x3D; F[r] + \omega _N^rG[r],\omega _N^r &#x3D; {e^{ - j2\pi {r \over {N&#x2F;2}}}}$$</p>
+<p>这样就可以计算出x[r]的前N&#x2F;2点的复数结果.</p>
+<p>但是当$r&#x3D;N&#x2F;2$时，代进去会发现$X[N&#x2F;2] &#x3D; \overline {X[N&#x2F;2]} $，只能知道X[N&#x2F;2]处也是一个实数，这个奈奎斯特频点的值需要进一步推导：</p>
+<p>N&#x2F;2点的离散傅里叶变换具有周期性，即$F[r]&#x3D;F[r+N&#x2F;2]$, $G[r]&#x3D;G[r+N&#x2F;2]$</p>
+<p>$$X[r + N&#x2F;2] &#x3D; F[r + N&#x2F;2] + \omega _N^{r + N&#x2F;2}G[r + N&#x2F;2] &#x3D; F[r] - \omega _N^rG[r]$$</p>
+<p>所以：</p>
+<p>$$X[N&#x2F;2] &#x3D; F[0] - G[0]$$</p>
+<p>再结合$X[r]$的共轭对称性，可以得到</p>
+<p>$$X[r + N&#x2F;2] &#x3D; \overline {X[N&#x2F;2 - r]} &#x3D;
+F[N&#x2F;2 - r] - \omega _N^rG[N&#x2F;2 -r] &#x3D;
+F[r] - \omega _N^rG[r] $$</p>
+<p>总结一下计算步骤, 先把实数序列当做复数序列算cfft $Y[r]$, 然后根据$Y[r]$ 计算出$F[r]$和$G[r]$,
+再利用N&#x2F;4长度的$F[r]$和$G[r]$计算$X[r]$, 其中$X[0]$和$X[N&#x2F;2]$另外单独算.</p>
+<p>$$Y[r] &#x3D; F[r] + jG[r]$$</p>
+<p>$$F[r] &#x3D; {1 \over 2}\left( {Y[r] + \overline {Y[N&#x2F;2 - r]} } \right)$$</p>
+<p>$$G[r] &#x3D; {j \over 2}\left( {\overline {Y[N&#x2F;2 - r]}  - Y[r]} \right)$$</p>
+<p>$$X[r] &#x3D; F[r] + \omega _N^rG[r]$$</p>
+<p>$$X[N&#x2F;2 - r] &#x3D; \overline {F[r] - \omega _N^rG[r]}$$</p>
+<h3 id="逆变换"><a href="#逆变换" class="headerlink" title="逆变换"></a>逆变换</h3><p>如果同样想用复数IFFT来计算实数IFFT（经过IFFT计算后结果为实数），这是一个相反的过程。</p>
+<p>$$Y[r] &#x3D; F[r] + jG[r]$$</p>
+<p>目前已知$X[r]$，只需要用$X[r]$表示出$F[r]$和$G[r]$，就可以用IFFT计算出$Y[r]$了。</p>
+<p>$$X[r] &#x3D; F[r] + \omega _N^rG[r]$$</p>
+<p>$$X[r + N&#x2F;2] &#x3D; F[r] - \omega _N^rG[r]$$</p>
+<p>联立上面两个式子可以得到：</p>
+<p>$$F[r] &#x3D; {1 \over 2}\left( {X[r] + X[r + N&#x2F;2]} \right)$$</p>
+<p>$$G[r] &#x3D; \frac{\omega _N^{ - r}}{2}\left( {X[r] - X[r + N&#x2F;2]} \right)$$</p>
+<p>$X[r]$具有共轭对称性，所以:</p>
+<p>$$X[r] &#x3D; \overline {X[N - r]} $$</p>
+<p>计算IFFT分为两步，首先需要将长度为（N&#x2F;2 + 1）的复数序列转换为长度为N&#x2F;2的复数序列。</p>
+<p>$$F[r] &#x3D; {1 \over 2}\left( {X[r] + \overline {X[N&#x2F;2 - r]} } \right)$$</p>
+<p>$$G[r] &#x3D; \frac{\omega _N^{ - r}}{2}\left( {X[r] - \overline {X[N&#x2F;2 - r]} } \right)$$</p>
+<p>观察对称性：</p>
+<p>$$F[N&#x2F;2 - r] &#x3D; {1 \over 2}\left( {X[N&#x2F;2 - r] + \overline {X[r]} } \right)$$</p>
+<p>$$G[N&#x2F;2 - r] &#x3D; \frac{\omega _N^{ - r}}{2}\left( {X[N&#x2F;2 - r] - \overline {X[r]} } \right)$$</p>
+<p>所以在计算那种知道结果是实数的IFFT的时候，是可以类似计算FFT的时候一样,
+同时计算$F[r]$和$F[N&#x2F;2 - r]$的, 因为他们所用到的输入数据是一样的。</p>
+<p>最后，如果FFT和IFFT都不归一化，一个序列调用FFT，再调用IFFT后会增大N倍，一般都会除以归一化因子N，有的放在FFT的计算上面，有的放在IFFT的计算上面，也有的拆分成两个$1&#x2F;\sqrt{N}$，分别放在FFT和IFFT上。</p>
+<p>一般情况下，信号经过FFT-IFFT loop会增大N倍，而如果用N&#x2F;2点计算的话，就会增大N&#x2F;2倍。所以如果想要让两种计算方式的结果一致，需要在第二种方式时把结果乘以2。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E5%BA%93%E5%88%A9-%E5%9B%BE%E5%9F%BA%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2%E7%AE%97%E6%B3%95">FFT wiki</a></li>
+</ul>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+          <li><a href="/tags/">标签</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="https://github.com/qiujiandong">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#FFT%E5%9F%BA%E7%A1%80"><span class="toc-number">1.</span> <span class="toc-text">FFT基础</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%91%E9%87%8F%E5%8C%96%E5%A4%84%E7%90%86"><span class="toc-number">2.</span> <span class="toc-text">向量化处理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E6%95%B0FFT"><span class="toc-number">3.</span> <span class="toc-text">实数FFT</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AD%A3%E5%8F%98%E6%8D%A2"><span class="toc-number">3.1.</span> <span class="toc-text">正变换</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%86%E5%8F%98%E6%8D%A2"><span class="toc-number">3.2.</span> <span class="toc-text">逆变换</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-number">4.</span> <span class="toc-text">参考资料</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://bearball.top/2025/10/27/rvv-fft/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://bearball.top/2025/10/27/rvv-fft/&text=RISC-V Vector优化Radix-2 FFT"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://bearball.top/2025/10/27/rvv-fft/&title=RISC-V Vector优化Radix-2 FFT"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://bearball.top/2025/10/27/rvv-fft/&is_video=false&description=RISC-V Vector优化Radix-2 FFT"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=RISC-V Vector优化Radix-2 FFT&body=Check out this article: https://bearball.top/2025/10/27/rvv-fft/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://bearball.top/2025/10/27/rvv-fft/&title=RISC-V Vector优化Radix-2 FFT"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://bearball.top/2025/10/27/rvv-fft/&title=RISC-V Vector优化Radix-2 FFT"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://bearball.top/2025/10/27/rvv-fft/&title=RISC-V Vector优化Radix-2 FFT"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://bearball.top/2025/10/27/rvv-fft/&title=RISC-V Vector优化Radix-2 FFT"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://bearball.top/2025/10/27/rvv-fft/&name=RISC-V Vector优化Radix-2 FFT&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://bearball.top/2025/10/27/rvv-fft/&t=RISC-V Vector优化Radix-2 FFT"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2025
+    Jiandong
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     --><!--
+       --><li><a href="/tags/">标签</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="https://github.com/qiujiandong">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>
